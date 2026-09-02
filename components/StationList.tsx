@@ -22,7 +22,9 @@ export default function StationList({ stations }: Props) {
         s.name.toLowerCase().includes(q) ||
         s.roadAddress.toLowerCase().includes(q) ||
         s.lotAddress.toLowerCase().includes(q) ||
-        s.institutionName.toLowerCase().includes(q),
+        s.institutionName.toLowerCase().includes(q) ||
+        s.sigungu.includes(q) ||
+        s.eupmyeondong.includes(q),
     );
   }, [query, stations]);
 
@@ -41,35 +43,27 @@ export default function StationList({ stations }: Props) {
         <div style={{ position: 'relative' }}>
           <span
             style={{
-              position: 'absolute',
-              left: '16px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              fontSize: '1.1rem',
-              color: '#9ca3af',
-              pointerEvents: 'none',
+              position: 'absolute', left: '16px', top: '50%',
+              transform: 'translateY(-50%)', fontSize: '1.1rem',
+              color: '#9ca3af', pointerEvents: 'none',
             }}
           >
             🔍
           </span>
           <input
             type="search"
-            placeholder="대여소명, 주소, 관리기관 검색…"
+            placeholder="대여소명, 주소, 지역, 관리기관 검색…"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             style={{
-              width: '100%',
-              padding: '14px 20px 14px 48px',
-              fontSize: '1rem',
-              borderRadius: '50px',
-              border: '2px solid #e5e7eb',
-              outline: 'none',
+              width: '100%', padding: '14px 20px 14px 48px',
+              fontSize: '1rem', borderRadius: '50px',
+              border: '2px solid #e5e7eb', outline: 'none',
               boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
-              transition: 'border-color 0.2s',
-              boxSizing: 'border-box',
+              transition: 'border-color 0.2s', boxSizing: 'border-box',
             }}
             onFocus={(e) => (e.currentTarget.style.borderColor = '#3b82f6')}
-            onBlur={(e) => (e.currentTarget.style.borderColor = '#e5e7eb')}
+            onBlur={(e)  => (e.currentTarget.style.borderColor = '#e5e7eb')}
           />
         </div>
         <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.85rem', color: '#6b7280' }}>
@@ -90,17 +84,14 @@ export default function StationList({ stations }: Props) {
         {paged.map((station) => (
           <Link
             key={station.id}
-            href={`/bike/${station.id}`}
+            href={`/bike/${station.slug}`}        /* ← 영문 slug 연결 */
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
             <article
               style={{
-                background: '#fff',
-                borderRadius: '14px',
-                border: '1px solid #f0f0f0',
-                padding: '20px',
-                height: '100%',
-                boxSizing: 'border-box',
+                background: '#fff', borderRadius: '14px',
+                border: '1px solid #f0f0f0', padding: '20px',
+                height: '100%', boxSizing: 'border-box',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 transition: 'transform 0.18s ease, box-shadow 0.18s ease',
                 cursor: 'pointer',
@@ -117,57 +108,52 @@ export default function StationList({ stations }: Props) {
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px' }}>
                 <span
                   style={{
-                    flexShrink: 0,
-                    width: '36px',
-                    height: '36px',
+                    flexShrink: 0, width: '36px', height: '36px',
                     borderRadius: '10px',
                     background: 'linear-gradient(135deg, #3b82f6, #6366f1)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '1rem',
                   }}
                 >
                   🚲
                 </span>
-                <h2
-                  style={{
-                    fontSize: '0.95rem',
-                    fontWeight: 700,
-                    lineHeight: 1.4,
-                    margin: 0,
-                    color: '#111827',
-                  }}
-                >
+                <h2 style={{ fontSize: '0.95rem', fontWeight: 700, lineHeight: 1.4, margin: 0, color: '#111827' }}>
                   {station.name}
                 </h2>
               </div>
 
+              {/* 지역 뱃지 */}
+              {(station.sigungu || station.eupmyeondong) && (
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                  {station.sigungu && (
+                    <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '20px', background: '#eff6ff', color: '#1d4ed8', fontWeight: 600 }}>
+                      {station.sigungu}
+                    </span>
+                  )}
+                  {station.eupmyeondong && (
+                    <span style={{ fontSize: '0.7rem', padding: '2px 8px', borderRadius: '20px', background: '#f3f4f6', color: '#4b5563' }}>
+                      {station.eupmyeondong}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <p
                 style={{
-                  fontSize: '0.8rem',
-                  color: '#6b7280',
-                  margin: '0 0 12px',
-                  lineHeight: 1.5,
-                  overflow: 'hidden',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
+                  fontSize: '0.8rem', color: '#6b7280', margin: '0 0 12px',
+                  lineHeight: 1.5, overflow: 'hidden',
+                  display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                 }}
               >
                 {station.roadAddress || station.lotAddress || '주소 정보 없음'}
               </p>
 
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {station.bikeCount && (
-                  <span style={tagStyle('#eff6ff', '#1d4ed8')}>
-                    🚲 {station.bikeCount}대
-                  </span>
+                  <span style={tagStyle('#eff6ff', '#1d4ed8')}>🚲 {station.bikeCount}대</span>
                 )}
                 {station.feeType && (
-                  <span style={tagStyle('#f0fdf4', '#15803d')}>
-                    {station.feeType}
-                  </span>
+                  <span style={tagStyle('#f0fdf4', '#15803d')}>{station.feeType}</span>
                 )}
                 {station.airPump === '있음' && (
                   <span style={tagStyle('#fff7ed', '#c2410c')}>💨 공기주입기</span>
@@ -181,69 +167,46 @@ export default function StationList({ stations }: Props) {
       {/* ── 페이지네이션 ── */}
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '64px' }}>
-          <button
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1}
-            style={pageBtn(page === 1)}
-          >
-            ← 이전
-          </button>
-          {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-            const pageNum = totalPages <= 7 ? i + 1 : getPageNum(i, page, totalPages);
-            return (
-              <button
-                key={pageNum}
-                onClick={() => setPage(pageNum)}
-                style={pageBtn(false, page === pageNum)}
-              >
-                {pageNum}
-              </button>
-            );
-          })}
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages}
-            style={pageBtn(page === totalPages)}
-          >
-            다음 →
-          </button>
+          <PBtn disabled={page === 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>← 이전</PBtn>
+          {buildPages(page, totalPages).map((n) => (
+            <PBtn key={n} active={page === n} onClick={() => setPage(n)}>{n}</PBtn>
+          ))}
+          <PBtn disabled={page === totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>다음 →</PBtn>
         </div>
       )}
     </>
   );
 }
 
+// ── 헬퍼 ─────────────────────────────────────────────────────────────────
 function tagStyle(bg: string, color: string): React.CSSProperties {
-  return {
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: '20px',
-    fontSize: '0.72rem',
-    fontWeight: 600,
-    background: bg,
-    color,
-  };
+  return { display: 'inline-block', padding: '2px 8px', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 600, background: bg, color };
 }
 
-function pageBtn(disabled: boolean, active = false): React.CSSProperties {
-  return {
-    padding: '8px 14px',
-    borderRadius: '8px',
-    border: active ? '2px solid #3b82f6' : '1px solid #e5e7eb',
-    background: active ? '#3b82f6' : disabled ? '#f9fafb' : '#fff',
-    color: active ? '#fff' : disabled ? '#d1d5db' : '#374151',
-    fontWeight: active ? 700 : 400,
-    fontSize: '0.875rem',
-    cursor: disabled ? 'default' : 'pointer',
-    transition: 'all 0.15s',
-  };
+function buildPages(current: number, total: number): number[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const set = new Set([1, current - 1, current, current + 1, total].filter((p) => p >= 1 && p <= total));
+  return [...set].sort((a, b) => a - b);
 }
 
-function getPageNum(i: number, current: number, total: number): number {
-  if (total <= 7) return i + 1;
-  const pages = [1, current - 1, current, current + 1, total].filter(
-    (p) => p >= 1 && p <= total,
+function PBtn({ children, onClick, disabled = false, active = false }: {
+  children: React.ReactNode; onClick: () => void; disabled?: boolean; active?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        padding: '8px 14px', borderRadius: '8px',
+        border: active ? '2px solid #3b82f6' : '1px solid #e5e7eb',
+        background: active ? '#3b82f6' : disabled ? '#f9fafb' : '#fff',
+        color: active ? '#fff' : disabled ? '#d1d5db' : '#374151',
+        fontWeight: active ? 700 : 400, fontSize: '0.875rem',
+        cursor: disabled ? 'default' : 'pointer',
+        transition: 'all 0.15s',
+      }}
+    >
+      {children}
+    </button>
   );
-  const unique = [...new Set(pages)].sort((a, b) => a - b);
-  return unique[i] ?? i + 1;
 }
