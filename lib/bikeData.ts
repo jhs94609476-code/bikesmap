@@ -3,7 +3,7 @@ import path from 'path';
 import { parse } from 'csv-parse/sync';
 import iconv from 'iconv-lite';
 
-// ── 한글 로마자 변환 (국립국어원 표준 로마자 표기법) ─────────────────────
+// ── 한글 로마자 변환 (국립국어원 표준) ──────────────────────────────────────
 const INITIALS = ['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'];
 const VOWELS   = ['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'];
 const FINALS   = ['','k','k','k','n','n','n','t','l','k','m','l','l','l','p','l','m','p','p','t','t','ng','t','t','k','t','p','t'];
@@ -14,10 +14,9 @@ function romanize(text: string): string {
     const code = char.charCodeAt(0);
     if (code >= 0xac00 && code <= 0xd7a3) {
       const idx = code - 0xac00;
-      const ini = Math.floor(idx / (21 * 28));
-      const vow = Math.floor((idx % (21 * 28)) / 28);
-      const fin = idx % 28;
-      result += INITIALS[ini] + VOWELS[vow] + FINALS[fin];
+      result += INITIALS[Math.floor(idx / (21 * 28))]
+              + VOWELS[Math.floor((idx % (21 * 28)) / 28)]
+              + FINALS[idx % 28];
     } else if (/[a-z0-9]/i.test(char)) {
       result += char.toLowerCase();
     }
@@ -25,7 +24,7 @@ function romanize(text: string): string {
   return result || 'kr';
 }
 
-// ── 시/도 → 영문 슬러그 맵 ────────────────────────────────────────────────
+// ── 시/도 → 영문 슬러그 ─────────────────────────────────────────────────────
 const SIDO_MAP: Record<string, string> = {
   '서울특별시': 'seoul',   '서울시': 'seoul',   '서울': 'seoul',
   '부산광역시': 'busan',   '부산시': 'busan',   '부산': 'busan',
@@ -46,14 +45,26 @@ const SIDO_MAP: Record<string, string> = {
   '제주특별자치도': 'jeju', '제주도': 'jeju', '제주': 'jeju',
 };
 
+// ── 3글자 잘림 시/도 정규화 ──────────────────────────────────────────────────
+const SIDO_NORMALIZE: Record<string, string> = {
+  '경상남': '경상남도', '경상북': '경상북도',
+  '충청북': '충청북도', '충청남': '충청남도',
+  '전라북': '전라북도', '전라남': '전라남도',
+  '강원특별자치': '강원특별자치도',
+  '전북특별자치': '전북특별자치도',
+};
+
+function normalizeSido(sido: string): string {
+  return SIDO_NORMALIZE[sido] ?? sido;
+}
+
 function sidoSlug(sido: string): string {
   return SIDO_MAP[sido] ??
     romanize(sido.replace(/(특별시|광역시|특별자치시|특별자치도|시|도)$/, ''));
 }
 
 function sigunguSlug(sigungu: string): string {
-  const stripped = sigungu.replace(/(특별자치시|특별시|광역시|시|군|구)$/, '');
-  return romanize(stripped);
+  return romanize(sigungu.replace(/(특별자치시|특별시|광역시|시|군|구)$/, ''));
 }
 
 // ── 주소 파싱 ────────────────────────────────────────────────────────────────
@@ -66,23 +77,25 @@ interface ParsedAddress {
 function parseAddress(addr: string): ParsedAddress {
   if (!addr) return { sido: '', sigungu: '', eupmyeondong: '' };
   const parts = addr.trim().split(/\s+/);
-  const sido = parts[0] ?? '';
+  const sido = normalizeSido(parts[0] ?? '');
   let sigungu = '';
   let eupmyeondong = '';
-
   for (let i = 1; i < parts.length; i++) {
     const p = parts[i];
     if (!sigungu && (p.endsWith('시') || p.endsWith('군') || p.endsWith('구'))) {
       sigungu = p;
-    } else if (
-      !eupmyeondong &&
-      (p.endsWith('동') || p.endsWith('읍') || p.endsWith('면') || p.endsWith('리'))
-    ) {
+    } else if (!eupmyeondong && (p.endsWith('동') || p.endsWith('읍') || p.endsWith('면') || p.endsWith('리'))) {
       eupmyeondong = p;
       break;
     }
   }
   return { sido, sigungu, eupmyeondong };
+}
+
+// ── Y/N 정규화 (Y·y·있음·1 → true) ─────────────────────────────────────────
+function isTruthy(val: string | undefined): boolean {
+  const v = (val ?? '').trim().toLowerCase();
+  return v === 'y' || v === '있음' || v === '1' || v === 'yes' || v === 'true';
 }
 
 // ── BikeStation 인터페이스 ────────────────────────────────────────────────────
@@ -95,20 +108,24 @@ export interface BikeStation {
   lat: number;
   lng: number;
   operatingHours: string;
+  /** 요금구분 (유료/무료) */
   feeType: string;
+  /** 자전거이용요금 (상세 요금) */
   feeDetails: string;
+  /** 휴무일 */
+  holiday: string;
   bikeCount: string;
   rackCount: string;
-  airPump: string;
-  repairBench: string;
+  /** Y/N 정규화된 boolean */
+  airPump: boolean;
+  /** Y/N 정규화된 boolean */
+  repairBench: boolean;
   phoneNumber: string;
   institutionName: string;
   dataReferenceDate: string;
-  // 파싱된 지역 정보
   sido: string;
   sigungu: string;
   eupmyeondong: string;
-  // SEO 필드
   seoTitle: string;
   seoDescription: string;
 }
@@ -121,7 +138,6 @@ export function getBikeStations(): BikeStation[] {
 
   const csvPath = path.join(process.cwd(), '전국자전거대여소표준데이터.csv');
   const rawBuffer = fs.readFileSync(csvPath);
-  // EUC-KR(CP949) → UTF-8 디코딩
   const fileContent = iconv.decode(rawBuffer, 'cp949');
 
   const rows = parse(fileContent, {
@@ -133,25 +149,29 @@ export function getBikeStations(): BikeStation[] {
   console.log('총 대여소 수:', rows.length);
 
   cachedStations = rows.map((row, index): BikeStation => {
-    const id = String(index + 1);
-    const name        = row['자전거대여소명']     ?? '';
-    const roadAddress = row['소재지도로명주소']   ?? '';
-    const lotAddress  = row['소재지지번주소']     ?? '';
+    const id          = String(index + 1);
+    const name        = row['자전거대여소명']   ?? '';
+    const roadAddress = row['소재지도로명주소'] ?? '';
+    const lotAddress  = row['소재지지번주소']   ?? '';
 
     const { sido, sigungu, eupmyeondong } = parseAddress(roadAddress || lotAddress);
 
-    const cityPart = sidoSlug(sido);
-    const distPart = sigungu ? sigunguSlug(sigungu) : 'kr';
-    const slug = `${cityPart}-${distPart}-${id}`;
+    const slug = `${sidoSlug(sido)}-${sigungu ? sigunguSlug(sigungu) : 'kr'}-${id}`;
 
     const sidoShort = sido.replace(/(특별시|광역시|특별자치시|특별자치도|도)$/, '');
     const dongPart  = eupmyeondong ? ` ${eupmyeondong}` : '';
-
-    const seoTitle =
-      `${sidoShort} ${sigungu}${dongPart} 공공자전거 대여소 - ${name} 위치·요금 안내`;
+    const seoTitle  = `${sidoShort} ${sigungu}${dongPart} 공공자전거 대여소 - ${name} 위치·요금 안내`;
     const seoDescription =
       `${sido} ${sigungu}${dongPart}에 위치한 ${name} 공공자전거 대여소의 운영시간, ` +
       `요금, 거치대 현황, 카카오맵 길찾기 정보를 확인하세요.`;
+
+    // 요금
+    const rawFee = (row['자전거이용요금'] ?? '').trim();
+    const feeDetails = rawFee || '현장 확인 필요';
+
+    // 휴무일
+    const rawHoliday = (row['휴무일'] ?? '').trim();
+    const holiday = rawHoliday || '연중무휴';
 
     return {
       id,
@@ -161,16 +181,17 @@ export function getBikeStations(): BikeStation[] {
       lotAddress,
       lat: parseFloat(row['위도']),
       lng: parseFloat(row['경도']),
-      operatingHours: `${row['운영시작시각'] ?? ''} ~ ${row['운영종료시각'] ?? ''} (${row['휴무일'] ?? ''})`,
-      feeType:        row['자전거대여구분']     ?? '',
-      feeDetails:     row['자전거이용료']       ?? '',
-      bikeCount:      row['자전거보유대수']     ?? '',
-      rackCount:      row['거치대수']           ?? '',
-      airPump:        row['공기주입기비치여부'] ?? '',
-      repairBench:    row['수리대비치여부']     ?? '',
-      phoneNumber:    row['관리기관전화번호']   ?? '',
-      institutionName: row['관리기관명']        ?? '',
-      dataReferenceDate: row['데이터기준일자']  ?? '',
+      operatingHours: `${row['운영시작시각'] ?? ''} ~ ${row['운영종료시각'] ?? ''}`,
+      feeType:    (row['요금구분']       ?? '').trim(),
+      feeDetails,
+      holiday,
+      bikeCount:  (row['자전거보유대수'] ?? '').trim(),
+      rackCount:  (row['거치대수']       ?? '').trim(),
+      airPump:    isTruthy(row['공기주입기비치여부']),
+      repairBench: isTruthy(row['수리대설치여부']),
+      phoneNumber:    (row['관리기관전화번호'] ?? '').trim(),
+      institutionName: (row['관리기관명']     ?? '').trim(),
+      dataReferenceDate: (row['데이터기준일자'] ?? '').trim(),
       sido,
       sigungu,
       eupmyeondong,
@@ -186,7 +207,6 @@ export function getStationBySlug(slug: string): BikeStation | undefined {
   return getBikeStations().find((s) => s.slug === slug);
 }
 
-/** 하위 호환성 유지 */
 export function getStationById(id: string): BikeStation | undefined {
   return getBikeStations().find((s) => s.id === id);
 }
