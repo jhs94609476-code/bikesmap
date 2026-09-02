@@ -49,16 +49,20 @@ export default async function BikePage({ params }: PageProps) {
     ? `https://map.naver.com/v5/search/${encodeURIComponent(station.name)}?c=${station.lng},${station.lat},15,0,0,0,dh`
     : `https://map.naver.com/v5/search/${encodeURIComponent(displayAddr)}`;
 
-  // 핵심 정보 카드 (위도/경도 제거, 요금·휴무일 추가)
+  // SEO 인트로 문구
+  const locationStr = [station.sigungu, station.eupmyeondong].filter(Boolean).join(' ');
+  const seoIntro = `${locationStr} 공공자전거 대여를 찾고 계신가요? ${station.name}의 실시간 거치 현황, 운영시간, 이용요금 및 카카오맵 길찾기 정보를 확인해 보세요.`;
+
+  // 핵심 정보 카드 (위도/경도 없음)
   const cards = [
-    { icon: '🕐', label: '운영 시간',      value: station.operatingHours || '정보 없음', bg: '#eff6ff', border: '#bfdbfe' },
-    { icon: '📅', label: '휴무일',          value: station.holiday,                      bg: '#f0fdf4', border: '#bbf7d0' },
-    { icon: '💰', label: '요금 구분',       value: station.feeType || '정보 없음',        bg: '#fef9c3', border: '#fde047' },
-    { icon: '🪙', label: '이용 요금',       value: station.feeDetails,                   bg: '#fff7ed', border: '#fed7aa' },
+    { icon: '🕐', label: '운영 시간',       value: station.operatingHours || '정보 없음', bg: '#eff6ff', border: '#bfdbfe' },
+    { icon: '📅', label: '휴무일',           value: station.holiday,                      bg: '#f0fdf4', border: '#bbf7d0' },
+    { icon: '💰', label: '요금 구분',        value: station.feeType || '정보 없음',        bg: '#fef9c3', border: '#fde047' },
+    { icon: '🪙', label: '이용 요금',        value: station.feeDetails,                   bg: '#fff7ed', border: '#fed7aa' },
     { icon: '🚲', label: '자전거 보유 대수', value: station.bikeCount ? `${station.bikeCount}대` : '정보 없음', bg: '#fdf4ff', border: '#e9d5ff' },
-    { icon: '🅿️', label: '거치대 수',       value: station.rackCount ? `${station.rackCount}개` : '정보 없음', bg: '#f0f9ff', border: '#bae6fd' },
-    { icon: '💨', label: '공기주입기',       value: station.airPump ? '있음' : '없음',    bg: station.airPump ? '#ecfdf5' : '#f9fafb', border: station.airPump ? '#6ee7b7' : '#e5e7eb' },
-    { icon: '🔧', label: '수리대',           value: station.repairBench ? '있음' : '없음', bg: station.repairBench ? '#ecfdf5' : '#f9fafb', border: station.repairBench ? '#6ee7b7' : '#e5e7eb' },
+    { icon: '🅿️', label: '거치대 수',        value: station.rackCount ? `${station.rackCount}개` : '정보 없음', bg: '#f0f9ff', border: '#bae6fd' },
+    { icon: '💨', label: '공기주입기',        value: station.airPump ? '있음' : '없음',    bg: station.airPump ? '#ecfdf5' : '#f9fafb', border: station.airPump ? '#6ee7b7' : '#e5e7eb' },
+    { icon: '🔧', label: '수리대',            value: station.repairBench ? '있음' : '없음', bg: station.repairBench ? '#ecfdf5' : '#f9fafb', border: station.repairBench ? '#6ee7b7' : '#e5e7eb' },
   ];
 
   return (
@@ -70,13 +74,16 @@ export default async function BikePage({ params }: PageProps) {
         </Link>
       </div>
 
-      {/* ── 히어로 ─────────────────────────────────────────────── */}
+      {/* ────────────────────────────────────────────────────────────
+          히어로 레이아웃 순서 엄수:
+          1) 지역 뱃지  2) H1  3) 주소  4) 공정위 고지 박스
+      ──────────────────────────────────────────────────────────── */}
       <header
         style={{
           background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 60%, #06b6d4 100%)',
           color: '#fff',
-          padding: '36px 24px 52px',
-          marginBottom: '32px',
+          padding: '36px 24px 40px',
+          marginBottom: '0',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -85,28 +92,79 @@ export default async function BikePage({ params }: PageProps) {
         <div style={{ position: 'absolute', bottom: '-60px', left: '-30px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
 
         <div style={{ maxWidth: '880px', margin: '0 auto', position: 'relative' }}>
+
+          {/* 1) 지역 뱃지 */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '14px' }}>
-            {sidoShort && <span style={badge}>{sidoShort}</span>}
-            {station.sigungu && <span style={badge}>{station.sigungu}</span>}
-            {station.eupmyeondong && <span style={{ ...badge, background: 'rgba(255,255,255,0.12)' }}>{station.eupmyeondong}</span>}
+            {sidoShort && (
+              <span style={badgeStyle}>{sidoShort}</span>
+            )}
+            {station.sigungu && (
+              <span style={badgeStyle}>{station.sigungu}</span>
+            )}
+            {station.eupmyeondong && (
+              <span style={{ ...badgeStyle, background: 'rgba(255,255,255,0.12)' }}>{station.eupmyeondong}</span>
+            )}
           </div>
-          <h1 style={{ fontSize: 'clamp(1.3rem, 3.5vw, 2rem)', fontWeight: 800, lineHeight: 1.3, marginBottom: '12px', letterSpacing: '-0.02em' }}>
+
+          {/* 2) H1 대제목 */}
+          <h1
+            style={{
+              fontSize: 'clamp(1.3rem, 3.5vw, 2rem)',
+              fontWeight: 800,
+              lineHeight: 1.3,
+              marginBottom: '12px',
+              letterSpacing: '-0.02em',
+            }}
+          >
             {station.seoTitle}
           </h1>
-          <p style={{ opacity: 0.88, fontSize: '1rem', lineHeight: 1.6, margin: 0 }}>
+
+          {/* 3) 주소 서브텍스트 */}
+          <p style={{ opacity: 0.9, fontSize: '1rem', lineHeight: 1.6, margin: '0 0 20px' }}>
             📍 {displayAddr}
           </p>
+
+          {/* 4) 공정위 필수 고지 박스 — 주소 바로 아래, 배너 바로 위 */}
+          <div
+            style={{
+              background: 'rgba(241,245,249,0.92)',
+              border: '1px solid rgba(226,232,240,0.85)',
+              borderRadius: '8px',
+              padding: '10px 16px',
+              textAlign: 'center',
+            }}
+          >
+            <p style={{ margin: 0, fontSize: '13px', color: '#334155', lineHeight: 1.6, fontWeight: 500 }}>
+              💡 이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.
+            </p>
+          </div>
         </div>
       </header>
 
-      <main style={{ maxWidth: '880px', margin: '0 auto', padding: '0 20px 72px' }}>
+      <main style={{ maxWidth: '880px', margin: '0 auto', padding: '32px 20px 72px' }}>
 
-        {/* ── 배너 1 (공정위 고지는 layout 최상단에 이미 표시됨) ── */}
-        <div style={{ marginBottom: '40px' }}>
+        {/* 5) 첫 번째 쿠팡 배너 (728×90) — 공정위 고지 바로 아래 */}
+        <div style={{ marginBottom: '28px' }}>
           <CoupangTopBanner />
         </div>
 
-        {/* ── 핵심 정보 카드 그리드 ────────────────────────────── */}
+        {/* SEO 인트로 Callout Box */}
+        <div
+          style={{
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
+            borderLeft: '4px solid #3b82f6',
+            borderRadius: '8px',
+            padding: '14px 18px',
+            marginBottom: '36px',
+          }}
+        >
+          <p style={{ margin: 0, fontSize: '0.95rem', color: '#334155', lineHeight: 1.8 }}>
+            {seoIntro}
+          </p>
+        </div>
+
+        {/* ── 핵심 정보 카드 그리드 ──────────────────────────────── */}
         <section aria-label="핵심 정보" style={{ marginBottom: '36px' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1f2937', marginBottom: '16px' }}>📋 핵심 정보</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
@@ -120,7 +178,7 @@ export default async function BikePage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* ── 원클릭 길찾기 ───────────────────────────────────── */}
+        {/* ── 원클릭 길찾기 ─────────────────────────────────────── */}
         <section aria-label="길찾기" style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', marginBottom: '36px' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1f2937', marginBottom: '16px' }}>🗺️ 원클릭 길찾기</h2>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
@@ -141,10 +199,10 @@ export default async function BikePage({ params }: PageProps) {
           )}
         </section>
 
-        {/* ── 배너 2 ──────────────────────────────────────────── */}
+        {/* ── 배너 2 ─────────────────────────────────────────────── */}
         <div style={{ marginBottom: '40px' }}><CoupangMidBanner /></div>
 
-        {/* ── 이용 안내 ────────────────────────────────────────── */}
+        {/* ── 이용 안내 ──────────────────────────────────────────── */}
         <section aria-label="이용 안내" style={{ marginBottom: '36px' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1f2937', marginBottom: '16px' }}>📖 이용 안내 및 안전 수칙</h2>
           <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '16px', padding: '24px 28px' }}>
@@ -158,7 +216,7 @@ export default async function BikePage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* ── FAQ ─────────────────────────────────────────────── */}
+        {/* ── FAQ ────────────────────────────────────────────────── */}
         <section aria-label="자주 묻는 질문" style={{ marginBottom: '40px' }}>
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1f2937', marginBottom: '16px' }}>❓ 자주 묻는 질문</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -175,14 +233,14 @@ export default async function BikePage({ params }: PageProps) {
           </div>
         </section>
 
-        {/* ── 배너 3 ──────────────────────────────────────────── */}
+        {/* ── 배너 3 ─────────────────────────────────────────────── */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
           <div style={{ maxWidth: '600px', width: '100%' }}>
             <CoupangBottomBanner />
           </div>
         </div>
 
-        {/* ── 출처 ─────────────────────────────────────────────── */}
+        {/* ── 출처 ───────────────────────────────────────────────── */}
         <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '24px' }}>
           <p style={{ fontSize: '0.78rem', color: '#9ca3af', lineHeight: 1.9, margin: '0 0 12px' }}>
             대여소 ID: #{station.id} · 데이터 기준일: {station.dataReferenceDate || '—'}<br />
@@ -198,7 +256,7 @@ export default async function BikePage({ params }: PageProps) {
   );
 }
 
-const badge: React.CSSProperties = {
+const badgeStyle: React.CSSProperties = {
   background: 'rgba(255,255,255,0.2)',
   backdropFilter: 'blur(8px)',
   borderRadius: '50px',

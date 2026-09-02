@@ -3,6 +3,11 @@ import path from 'path';
 import { parse } from 'csv-parse/sync';
 import iconv from 'iconv-lite';
 
+// ── 대여소명 앞 관리번호 제거 (예: "4427. 동일하이빌" → "동일하이빌") ────────
+function cleanStationName(raw: string): string {
+  return raw.replace(/^\d+[.\s\-]+/, '').trim();
+}
+
 // ── 한글 로마자 변환 (국립국어원 표준) ──────────────────────────────────────
 const INITIALS = ['g','kk','n','d','tt','r','m','b','pp','s','ss','','j','jj','ch','k','t','p','h'];
 const VOWELS   = ['a','ae','ya','yae','eo','e','yeo','ye','o','wa','wae','oe','yo','u','wo','we','wi','yu','eu','ui','i'];
@@ -150,7 +155,7 @@ export function getBikeStations(): BikeStation[] {
 
   cachedStations = rows.map((row, index): BikeStation => {
     const id          = String(index + 1);
-    const name        = row['자전거대여소명']   ?? '';
+    const name        = cleanStationName(row['자전거대여소명'] ?? '');
     const roadAddress = row['소재지도로명주소'] ?? '';
     const lotAddress  = row['소재지지번주소']   ?? '';
 

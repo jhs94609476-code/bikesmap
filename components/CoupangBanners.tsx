@@ -1,15 +1,5 @@
 import React from 'react';
 
-const NOTICE = '이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다.';
-
-const noticeStyle: React.CSSProperties = {
-  textAlign: 'center',
-  fontSize: '11px',
-  color: '#9ca3af',
-  marginTop: '6px',
-  lineHeight: 1.4,
-};
-
 const centerBox: React.CSSProperties = {
   textAlign: 'center',
   margin: '0 auto',
@@ -32,7 +22,6 @@ export function CoupangTopBanner() {
           style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
         />
       </a>
-      <p style={noticeStyle}>{NOTICE}</p>
     </div>
   );
 }
@@ -54,7 +43,6 @@ export function CoupangMidBanner() {
           style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto' }}
         />
       </a>
-      <p style={noticeStyle}>{NOTICE}</p>
     </div>
   );
 }
@@ -77,29 +65,6 @@ export function CoupangBottomBanner() {
           style={{ maxWidth: '100%', height: 'auto', display: 'block', margin: '0 auto', width: '100%' }}
         />
       </a>
-      <p style={noticeStyle}>{NOTICE}</p>
-    </div>
-  );
-}
-
-/* ── 상단 고정 공지 바 ───────────────────────────────────────────────────── */
-export function CoupangNoticeBar() {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0,
-        zIndex: 9999,
-        backgroundColor: '#f5f0e8',
-        borderBottom: '1px solid #e0d8c8',
-        textAlign: 'center',
-        padding: '6px 16px',
-        fontSize: '11px',
-        color: '#9ca3af',
-        lineHeight: 1.4,
-      }}
-    >
-      {NOTICE}
     </div>
   );
 }
