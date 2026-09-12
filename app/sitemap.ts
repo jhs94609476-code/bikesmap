@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { getBikeStations } from '@/lib/bikeData';
+import { ALL_REGION_SLUGS } from '@/lib/regionUtils';
 
 const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://bikesmap.vercel.app';
 
@@ -12,13 +13,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/contact`,  lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
   ];
 
+  // 지역 허브 페이지 (pSEO)
+  const regionPages: MetadataRoute.Sitemap = ALL_REGION_SLUGS.map((slug) => ({
+    url: `${BASE_URL}/region/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'weekly',
+    priority: 0.85,
+  }));
+
   const stations = getBikeStations();
-  const dynamicPages: MetadataRoute.Sitemap = stations.map((station) => ({
-    url: `${BASE_URL}/bike/${station.slug}`,   /* ← 영문 slug 사용 */
+  const stationPages: MetadataRoute.Sitemap = stations.map((station) => ({
+    url: `${BASE_URL}/bike/${station.slug}`,
     lastModified: new Date(),
     changeFrequency: 'monthly',
     priority: 0.7,
   }));
 
-  return [...staticPages, ...dynamicPages];
+  return [...staticPages, ...regionPages, ...stationPages];
 }

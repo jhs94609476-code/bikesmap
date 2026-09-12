@@ -3,44 +3,26 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import type { BikeStation } from '@/lib/bikeData';
+import { REGION_NAV } from '@/lib/regionUtils';
 
 interface Props {
   stations: BikeStation[];
+  /** 현재 활성화된 지역 슬러그 (region 페이지에서 전달) */
+  activeCity?: string;
 }
 
 const PAGE_SIZE = 24;
 
-const REGIONS = [
-  { label: '전체', value: '' },
-  { label: '서울', value: '서울' },
-  { label: '경기', value: '경기' },
-  { label: '인천', value: '인천' },
-  { label: '강원', value: '강원' },
-  { label: '충북', value: '충청북도' },
-  { label: '충남', value: '충청남도' },
-  { label: '대전', value: '대전' },
-  { label: '세종', value: '세종' },
-  { label: '전북', value: '전라북도' },
-  { label: '전남', value: '전라남도' },
-  { label: '광주', value: '광주' },
-  { label: '경북', value: '경상북도' },
-  { label: '경남', value: '경상남도' },
-  { label: '대구', value: '대구' },
-  { label: '울산', value: '울산' },
-  { label: '부산', value: '부산' },
-  { label: '제주', value: '제주' },
-];
 
-export default function StationList({ stations }: Props) {
-  const [query, setQuery]   = useState('');
-  const [region, setRegion] = useState('');
-  const [page, setPage]     = useState(1);
+export default function StationList({ stations, activeCity }: Props) {
+  const [query, setQuery] = useState('');
+  const [page, setPage]  = useState(1);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return stations.filter((s) => {
-      const matchRegion = !region || s.sido.includes(region);
-      const matchQuery  = !q || (
+      if (!q) return true;
+      return (
         s.name.toLowerCase().includes(q) ||
         s.roadAddress.toLowerCase().includes(q) ||
         s.lotAddress.toLowerCase().includes(q) ||
@@ -48,19 +30,17 @@ export default function StationList({ stations }: Props) {
         s.sigungu.includes(q) ||
         s.eupmyeondong.includes(q)
       );
-      return matchRegion && matchQuery;
     });
-  }, [query, region, stations]);
+  }, [query, stations]);
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleSearch = (v: string) => { setQuery(v); setPage(1); };
-  const handleRegion = (v: string) => { setRegion(v); setPage(1); };
 
   return (
     <>
-      {/* ── 지역 필터 탭 ────────────────────────────────────────── */}
+      {/* ── 지역 탭 (URL 이동) ────────────────────────────────── */}
       <div
         style={{
           overflowX: 'auto',
@@ -70,12 +50,13 @@ export default function StationList({ stations }: Props) {
         }}
       >
         <div style={{ display: 'flex', gap: '8px', minWidth: 'max-content', padding: '0 16px' }}>
-          {REGIONS.map(({ label, value }) => {
-            const active = region === value;
+          {REGION_NAV.map(({ label, slug }) => {
+            const active = slug === (activeCity ?? '');
+            const href   = slug ? `/region/${slug}` : '/';
             return (
-              <button
-                key={value}
-                onClick={() => handleRegion(value)}
+              <Link
+                key={slug || 'all'}
+                href={href}
                 style={{
                   padding: '8px 16px',
                   borderRadius: '50px',
@@ -84,14 +65,15 @@ export default function StationList({ stations }: Props) {
                   color: active ? '#fff' : '#374151',
                   fontWeight: active ? 700 : 500,
                   fontSize: '0.875rem',
-                  cursor: 'pointer',
                   whiteSpace: 'nowrap',
-                  transition: 'all 0.15s',
+                  textDecoration: 'none',
+                  display: 'inline-block',
                   boxShadow: active ? '0 2px 8px rgba(59,130,246,0.3)' : 'none',
+                  transition: 'all 0.15s',
                 }}
               >
                 {label}
-              </button>
+              </Link>
             );
           })}
         </div>
@@ -121,7 +103,7 @@ export default function StationList({ stations }: Props) {
         </div>
         <p style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.85rem', color: '#6b7280' }}>
           {filtered.length.toLocaleString()}개 대여소
-          {region && ` · ${REGIONS.find((r) => r.value === region)?.label}`}
+          {activeCity && ` · ${REGION_NAV.find((r) => r.slug === activeCity)?.label}`}
           {query && ` · "${query}" 검색`}
         </p>
       </div>

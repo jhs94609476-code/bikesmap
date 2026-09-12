@@ -63,12 +63,12 @@ function normalizeSido(sido: string): string {
   return SIDO_NORMALIZE[sido] ?? sido;
 }
 
-function sidoSlug(sido: string): string {
+export function sidoSlug(sido: string): string {
   return SIDO_MAP[sido] ??
     romanize(sido.replace(/(특별시|광역시|특별자치시|특별자치도|시|도)$/, ''));
 }
 
-function sigunguSlug(sigungu: string): string {
+export function sigunguSlug(sigungu: string): string {
   return romanize(sigungu.replace(/(특별자치시|특별시|광역시|시|군|구)$/, ''));
 }
 
